@@ -527,9 +527,9 @@ OK_plot <- ggmap(sb_map, darken = .2) +
 OK_plot
 ```
 
+
 The station with the highest correlation was `r station_df_most$station_id` with an r squared value of `r round(station_df_most$r_sq, 3)`
 
-Plotting it in this way was a good way to check and make sure that this correlation makes sense. Station 238 does appear to be in an area that would drain into the Cachuma Reservoir.  
 
 I chose to use station 238 for the remainder of my analysis.
 ```{r}
