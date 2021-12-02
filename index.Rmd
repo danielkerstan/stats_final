@@ -28,7 +28,7 @@ library(gridExtra)
 library(equatiomatic)
 ```
 # Purpose
-**The purpose of this document is to show my approach to understanding precipitation in Santa Barbara County by accessing and analyzing precipitation data sets and then applying that analysis to understand its effect on the Cachuma Reservoir.**
+**The purpose of this document is to show my approach to understanding precipitation in Santa Barbara County by accessing and analyzing precipitation data sets and then applying that analysis to the question: how does precipitation in Santa Barbara County affect the water level of the Cachuma Reservoir.**
 
 
 # Precipitation
@@ -36,13 +36,13 @@ library(equatiomatic)
 ### Gathering Data
 Rainfall data was gathered from the [Santa Barbara County Website](https://www.countyofsb.org/pwd/dailyrainfall.sbc).
 
-This data consisted of 81 separate .xls files, each from a different rainfall gauge in Santa Barbara County, which I put into a single folder.
+This data consisted of 81 separate .xls files, each from a different rainfall gauge in Santa Barbara County, which I put into a single folder. The time period for this data is from the year 1899 to the year 2021 with daily rainfall totals measured in inches. Latitude and Longitude coordinates and elevation in feet were also provided with the data per station id.
 
 I then created a function to read and clean these files. A for loop was used to apply this function to all 81 files and put all of the data into a single data frame.
 
 A separate function and for loop was used to extract the location data for each rainfall gauge.
 
-After this process I had two data frames, one with daily rainfall totals for each date based on station id and another with the latitude and longitude coordinates of each station (rainfall gauge).
+After this process I had two data frames, one with daily rainfall totals for each date based on station id. and another with the latitude and longitude coordinates of each station (rainfall gauge).
 
 ```{r}
 # Precipitation data
@@ -155,7 +155,7 @@ I then created another data frame with yearly rainfall totals averaged over all 
 
 This allowed me to plot these points onto the map.
 
-```{r, fig.cap= "Average yearly precipitation in Santa Barbara County"}
+```{r, fig.cap= "Average yearly precipitation in Santa Barbara County by location from 1899-2021"}
 ### get a basemap
 sb_map <- get_stamenmap(bbox = c(left = -120.65,
                                     bottom = 34.39694,
@@ -180,7 +180,7 @@ ggmap(sb_map, darken = .2) +
   geom_point(data = precip_year_plot, mapping = aes(x = lon, y = lat, color = year_precip), size = 2) +
   scale_color_gradient(low = "lightblue", high = "blue4") +
   labs(title = "Yearly Precipitation in Santa Barbara County", color = "Yearly Precipitation (in)") +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", axis.title.x = element_blank(), axis.title.y = element_blank())
 ```
 
 ### Kriging
@@ -193,7 +193,7 @@ The first step in this process was to create a variogram, which describes the sp
 The function `automap::autofitVariogram()` was used to choose the model that best fits the data.
 Next, after defining a target grid, the `gstat::krige()` function was used to generate the set of predictions.
 
-```{r, fig.cap= "Spatial interpolation of average yearly precipitation in Santa Barbara County", results='hide'}
+```{r, fig.cap= "Spatial interpolation of average yearly precipitation in Santa Barbara County from 1899-2021", results='hide'}
 precip_sf <- st_as_sf(precip_year_plot, coords = c("lon", "lat"), crs = 4326) %>% 
   cbind(st_coordinates(.))
 
@@ -235,7 +235,7 @@ OK_plot <- ggmap(sb_map, darken = .2) +
   coord_cartesian() +
   scale_fill_gradient2(low = "transparent", mid = "blue4", high = "blue4", midpoint = 30) +
   labs(title = "Yearly Precipitation in Santa Barbara County", fill = "Yearly Precipitation (in)") +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", axis.title.x = element_blank(), axis.title.y = element_blank())
 
 OK_plot
 ```
@@ -322,7 +322,7 @@ With the precipitation data sorted out, I could now apply it to understanding th
 The Cachuma Reservoir is heavily relied upon by the city of Santa Barbara, which is entitled to 32.19% of its available water. Understanding how rainfall affects this reservoir is vitally important.
 
 
-## Reservoir data
+### Reservoir data
 
 I found reservoir level data for the Cachuma Reservoir on the [County of Santa Barbara Public Works website](https://rain.cosbpw.net/sensor/?time_zone=US%2FPacific&site_id=105&site=70729dd9-97d4-430a-9271-7b6c195b49be&device_id=1&device=5d7a3129-708d-4881-9886-f84c6686ab41&data_start=2012-10-29%2000%3A00%3A00&data_end=2012-11-28%2023%3A59%3A59&bin=3600&range=Custom%20Range&markers=false&legend=true&thresholds=true&refresh=off&show_raw=true&show_quality=true).
 
@@ -560,8 +560,8 @@ predictions <- station_238_monthly %>%
 model_plot <- ggplot(station_238_monthly, aes(x = month_precip, y = monthly_level_change)) +
   geom_point() +
   geom_line(data = predictions, aes(x = month_precip, y = pred), color = "blue") +
-  labs(x = "Monthly Precipitation", y = "Monthly Change in Reservoir Level") +
-  theme(axis.title.y = element_text(size = 8), axis.title.x = element_text(size = 10))
+  labs(x = "Monthly Precipitation (in)", y = "Monthly Change in Reservoir Level (ft)") +
+  theme(axis.title.y = element_text(size = 6), axis.title.x = element_text(size = 8))
 
 
 res_hist <- ggplot(predictions) +
@@ -600,13 +600,15 @@ final_monthly_plot <- ggplot(station_238_monthly) +
   geom_rect(aes(ymin=-10, ymax = 50, xmin = monthyear, xmax=monthyear+30, fill = month_precip), alpha = 0.5) +
   scale_fill_gradient2(low = "transparent", mid = "royalblue1", high = "darkblue", midpoint = 5, na.value = "transparent") +
   geom_col(aes(y = monthly_level_change, x = monthyear + 15)) +
-  labs(y = "Level Change (ft)", fill = "Monthly Rain") +
+  labs(y = "Level Change (ft)", fill = "Monthly Rain (in)") +
   theme(axis.title.x = element_blank(), axis.title.y = element_text(size = 9), legend.title = element_text(size = 8))
 
 
 final_daily_plot / (final_daily_change_plot + final_monthly_plot)
 ```
+## Further Analysis
 
+While it first seemed reasonable that station 238 would have the highest correlation with change in reservoir level, upon closer examination of the terrain, station 238 seems to actually be located outside of the watershed feeding the reservoir. I believe this makes its correlation even more interesting. My assumption is that precipitation at station 238 mimics the precipitation nearby on the other side of the ridge just to the south, an area that does drain into Cachuma Reservoir. Due to the relative lack of rain gauge stations in that area that are at at a similar elevation (there is one nearby that is at a higher elevation), it seems possible that station 238 could be the best representation of precipitation just on the other side of the ridge. It would be interesting to investigate this further in the future with the help of more data and the installation of more rain gauge stations.
 
 ## References
 
